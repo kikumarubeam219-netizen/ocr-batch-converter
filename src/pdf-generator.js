@@ -71,7 +71,7 @@ export class PDFGenerator {
       try {
         this.pdfDoc.registerFontkit(fontkit);
         const fontBytes = await this._loadJapaneseFont();
-        japaneseFont = await this.pdfDoc.embedFont(fontBytes, { subset: true });
+        japaneseFont = await this.pdfDoc.embedFont(fontBytes, { subset: false });
         console.log('[PDF] 日本語フォントの埋め込み準備完了');
       } catch (error) {
         console.error('[PDF] 日本語フォントの読み込みに失敗:', error);
