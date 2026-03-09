@@ -1,6 +1,7 @@
 // PDF生成モジュール - 座標ベースの検索可能PDF生成（日本語OCRテキスト対応）
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
+import { saveAs } from 'file-saver';
 
 // A4サイズ (pt単位)
 const PAGE_SIZES = {
@@ -286,17 +287,7 @@ export class PDFGenerator {
       throw new Error('PDFが生成されていません');
     }
     const blob = new Blob([this.pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 1000);
+    saveAs(blob, filename);
   }
 
   getSizeMB() {
