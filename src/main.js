@@ -1,9 +1,10 @@
 // メインエントリーポイント - アプリケーション全体の制御
-// フロー: 画像選択 → PDF生成 → OCR処理 → ダウンロード
+// フロー: 画像/PDF選択 → PDF生成 → OCR処理 → ダウンロード
 import './style.css';
 import { FileManager } from './file-manager.js';
 import { OCREngine } from './ocr-engine.js';
 import { PDFGenerator } from './pdf-generator.js';
+import { PDFReader } from './pdf-reader.js';
 import { UIController } from './ui-controller.js';
 
 class App {
@@ -89,23 +90,53 @@ class App {
 
   /**
    * ファイル選択時の処理
+   * PDFファイルが含まれている場合は各ページを画像に展開する
    */
   async _handleFiles(fileList) {
     const added = this.fileManager.addFiles(fileList);
 
     if (added === 0) {
-      this.ui.showToast('対応形式の画像ファイルがありません', 'warning');
+      this.ui.showToast('対応形式のファイルがありません', 'warning');
       return;
+    }
+
+    // PDFファイルを画像に展開
+    const pdfFiles = this.fileManager.files.filter(f => PDFReader.isPDF(f));
+    if (pdfFiles.length > 0) {
+      this.ui.showToast(`${pdfFiles.length}件のPDFをページ画像に展開中...`, 'info', 10000);
+
+      // PDFでないファイルだけ残す
+      const nonPdfFiles = this.fileManager.files.filter(f => !PDFReader.isPDF(f));
+      this.fileManager.files = nonPdfFiles;
+
+      // 各PDFファイルをページ画像に変換
+      for (const pdfFile of pdfFiles) {
+        try {
+          const pageImages = await PDFReader.extractPages(pdfFile, (current, total) => {
+            this.ui.showToast(
+              `${pdfFile.name}: ${current}/${total} ページ展開中...`, 'info', 2000
+            );
+          });
+          // 展開したページ画像をファイルリストに追加
+          for (const pageImage of pageImages) {
+            this.fileManager.files.push(pageImage);
+          }
+          console.log(`[PDF展開] ${pdfFile.name}: ${pageImages.length}ページ → 画像に変換完了`);
+        } catch (error) {
+          console.error(`[PDF展開エラー] ${pdfFile.name}:`, error);
+          this.ui.showToast(`PDFの展開に失敗: ${pdfFile.name}`, 'error', 5000);
+        }
+      }
     }
 
     // ファイル名順にソート
     this.fileManager.sortByName();
 
-    this.ui.showToast(`${added}件のファイルを追加しました（合計: ${this.fileManager.count}件）`, 'success');
+    this.ui.showToast(`合計 ${this.fileManager.count} ページ`, 'success');
     this.ui.showFilelist();
     this.ui.setStep(1);
 
-    // ファイルリストをレンダリング（サムネイルなし）
+    // ファイルリストをレンダリング
     this.ui.renderFileList(this.fileManager.files, this.fileManager.thumbnails);
 
     // サムネイルを非同期生成

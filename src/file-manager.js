@@ -14,11 +14,11 @@ export class FileManager {
      * @returns {number} 追加されたファイル数
      */
     addFiles(fileList) {
-        const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/bmp', 'image/tiff'];
+        const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/bmp', 'image/tiff', 'application/pdf'];
         let addedCount = 0;
 
         for (const file of fileList) {
-            if (validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff?|gif)$/i.test(file.name)) {
+            if (validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff?|gif|pdf)$/i.test(file.name)) {
                 this.files.push(file);
                 addedCount++;
             }
